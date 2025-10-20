@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="js/bootstrap-5.3.8-dist/css/bootstrap.min.css">
+    <link href="js/bootstrap-5.3.8-dist/bootstrap-icons-1.13.1/bootstrap-icons.css" rel="stylesheet">
+    <script src="js/bootstrap-5.3.8-dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/sweetalert2-11.26.2/package/dist/sweetalert2.all.min.js"></script>
+    <title>Service de vehículos</title>
+</head>
+
+<body class="p-3 mb-2 bg-secondary bg-gradient text-white">
+    <div>
+        <div class="card-header text-center fw-semibold">
+            Listado de Clientes
+        </div>
+        <div class="card-body p-0">
+            <div class="input-group mb-3">
+                <div class="input-group-prepend">
+                    <span class="input-group-text">Filtro de busqueda:</span>
+                </div>
+                <input type="text" readonly class="form-control" placeholder="Seleccione un filtro primero"
+                    id="InputFilterTable">
+                <select class="custom-select" id="SelectFilterTable">
+                    <option selected value="">⇓ FILTRO ⇓</option>
+                    <option value="dni">DNI</option>
+                    <option value="nombre y apellido">Nombre y apellido</option>
+                    <option value="Email">EMAIL</option>
+                    <option value="movil">MOVIL</option>
+                    <option value="observaciones">OBSERVACIONES</option>
+                </select>
+
+            </div>
+            <table id="tableClients" class="table table-bordered table-striped table-hover align-middle mb-0">
+                <thead class="table-primary text-center">
+                    <tr>
+                        <th>Usuario N°</th>
+                        <th>Nombre y apellido</th>
+                        <th>DNI</th>
+                        <th>Telefono</th>
+                        <th>Email</th>
+                        <th>Obervaciones</th>
+                        <th>Movil</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="listClients">
+                    <tr>
+                        <td>Cargando...</td>
+                        <td>Cargando...</td>
+                        <td>Cargando...</td>
+                        <td>Cargando...</td>
+                        <td>Cargando...</td>
+                        <td>Cargando...</td>
+                        <td>Cargando...</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="modal fade" id="addStockModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content text-bg-secondary">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Añadir nuevo movimiento</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    Producto: <strong><label id="prodLabel"></label></strong>
+                                </li>
+                                <li class="list-group-item">
+                                    Fecha: <input type="date" id="addStockDate" class="form-control">
+                                </li>
+                                <li class="list-group-item">
+                                    Cantidad: <input type="number" id="addStockNumber" class="form-control">
+                                </li>
+                                <li class="list-group-item">
+                                    Observaciones: <textarea id="addStockText" class="form-control"></textarea>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button id="addNewStockBtn" class="btn btn-success">
+                                <i class="bi bi-plus-lg"></i> Agregar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="substractStockModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content text-bg-secondary">
+
+                        <div class="modal-header">
+                            <h5 class="modal-title">Restar stock</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    Producto: <strong><label id="substrProdLabel"></label></strong>
+                                </li>
+                                <li class="list-group-item">
+                                    Fecha: <input type="date" id="substrStockDate" class="form-control">
+                                </li>
+                                <li class="list-group-item">
+                                    Cantidad: <input type="number" id="substrStockNumber" class="form-control">
+                                </li>
+                                <li class="list-group-item">
+                                    Observaciones: <textarea id="substrStockText" class="form-control"></textarea>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button id="substractStockBtn" class="btn btn-danger">
+                                <i class="bi bi-dash-lg"></i> Restar
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <div class="modal fade" id="showStockModal" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="productNameStock">Situación de Stock</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0 ">
+                            <div class="table-responsive">
+                                <table id="tableListStock"
+                                    class="table align-middle table-bordered table-striped table-hover table-sm">
+                                    <thead class="table-primary text-center">
+                                        <tr>
+                                            <th style="width:5%;">Nro-Movimiento</th>
+                                            <th class="text-nowrap" style="width:15%;">Fecha</th>
+                                            <th class="text-nowrap" style="width:15%;">Patente</th>
+                                            <th class="text-nowrap" style="width:20%;">Modelo</th>
+                                            <th class="text-nowrap" style="width:15%;">Monto Total</th>
+                                            <th style="width:15%;">Fecha estado actual</th>
+                                            <th class="text-nowrap" style="width:15%;">Estado actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="table-group-divider" id="listStock"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script>
+                loadAllClients();
+                $(".modal").on("hidden.bs.modal", function () {
+                    $(this).find("input, textarea").val("");
+                    loadAllClients();
+                });
+                $('#SelectFilterTable').change(function (e) {
+                    if ($('#SelectFilterTable').val() == '') {
+                        loadAllProducts();
+                        $("#InputFilterTable").attr({
+                            'readonly': true,
+                            placeholder: 'Seleccione un filtro primero'
+                        });
+                    } else {
+                        $("#InputFilterTable").show();
+                        $("#InputFilterTable").attr({
+                            'readonly': false,
+                            placeholder: ''
+                        });
+                    }
+                });
+                $("#InputFilterTable").on('input', function () {
+                    var filter = $(this).val().toUpperCase();
+                    var selected = $("#SelectFilterTable").val(); // valor del <select>
+                    var tableHead = $("#tableClients");
+                    var tableBody = $("#listClients");
+                    var tr = tableBody.find("tr");
+                    // índice de columna según encabezado
+                    var index = -1;
+                    if (selected) {
+                        tableHead.find("th").each(function (i) {
+                            if ($(this).text().toLowerCase() === selected.toLowerCase()) {
+                                index = i;
+                                return false;
+                            }
+                        });
+                    }
+
+                    tr.each(function () {
+                        var tds = $(this).find("td");
+                        var found = false;
+
+                        if (index >= 0 && tds.eq(index).length) {
+                            // filtra solo por la columna seleccionada
+                            var txt = tds.eq(index).text();
+                            found = txt.toUpperCase().indexOf(filter) > -1;
+                        } else {
+                            // si no hay selección, busca en todas las columnas
+                            tds.each(function () {
+                                if ($(this).text().toUpperCase().indexOf(filter) > -1) {
+                                    found = true;
+                                    return false;
+                                }
+                            });
+                        }
+                        $(this).toggle(found);
+                    });
+                });
+                function loadAllClients() {
+                    $.ajax({
+                        type: "POST",
+                        url: "backend/collector.php",
+                        data: { action: "clientes_list" },
+                        dataType: "json",
+                        success: function (response) {
+                            $("#listClients").empty();
+                            $.each(response.data, function (index, content) {
+                                buttonPlus = $("<button>").attr({
+                                    id: "add_" + content.id,
+                                    class: "btn btn-sm btn-success me-1",
+                                    onclick: "modalAdd(this, " + content.id + ")",
+                                });
+                                buttonPlus.html('<i class="bi bi-plus-lg"></i>');
+                                buttonMinus = $("<button>").attr({
+                                    id: "substract_" + content.id,
+                                    class: "btn btn-sm btn-danger",
+                                    onclick: "modalSubstract(this, " + content.id + ")",
+                                });
+                                buttonMinus.html('<i class="bi bi-dash-lg"></i>');
+                                tr = $("<tr>");
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.id)
+                                        .attr({
+                                            onclick: "loadStockData(" + content.id + ")",
+                                            id: content.id,
+                                        })
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.apellido_nombre)
+                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.DNI)
+                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.te_linea)
+                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.email)
+                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.observaciones)
+                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.movil)
+                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                );
+                                tr.append($("<td>").append(buttonPlus, buttonMinus));
+                                $("#listClients").append(tr);
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.warn("Respuesta: " + status + "\n" + error);
+                        },
+                    });
+                }
+
+                function loadStockData(tableId) {
+                    showModal("showStockModal");
+                    $.ajax({
+                        type: "POST",
+                        url: "backend/collector.php",
+                        data: { action: "clientes_servicios", clientId: tableId },
+                        dataType: "json",
+                        success: function (response) {
+                            $("#listStock").empty();
+                            $.each(response.data, function (index, content) {
+                                buttonRewind = $("<button>").attr({
+                                    id: "rewind_" + content.id,
+                                    class: "btn btn-sm btn-danger ",
+                                    onclick: "actionRewindStock(this, " + content.id + ")",
+                                });
+                                buttonRewind.html('<i class="bi bi-x-lg"></i>');
+                                tr = $("<tr>");
+                                $(tr).attr('id', content.id);
+                                $("#productNameStock").html(
+                                    $("<label>").text(
+                                        "Cliente: " + content.apellido_nombre
+                                    )
+                                );
+                                tr.append($("<td>").text(content.id)); // fila Nro:
+                                tr.append($("<td>").text(content.fecha));
+                                tr.append($("<td>").text(content.patente));
+                                tr.append($("<td>").text(content.nombre));
+                                tr.append($("<td>").text(content.importe));
+                                tr.append($("<td>").text(content.fecha_estado));
+                                tr.append($("<td>").text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : "entregado"));
+                                tr.append(buttonRewind);
+                                $("#listStock").append(tr);
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.warn("Respuesta: " + status + "\n" + error);
+                        },
+                    });
+                }
+                function showModal(modalId) {
+                    const modalInstance = bootstrap.Modal.getOrCreateInstance(
+                        $("#" + modalId)[0]
+                    );
+                    modalInstance.show();
+                }
+
+            </script>
+</body>
+
+</html>
