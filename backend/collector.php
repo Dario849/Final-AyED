@@ -6,16 +6,23 @@ class Collector
     private $handlers = [];
     public function __construct()
     {
-        $this->handlers = [ /* Mapeo de todos los handlers a disposición */
-            /* TRAE LISTA COMPLETA DE CLIENTES
-                ADMITE BUSQUEDA DE TODOS LOS SERVICIOS ASOCIADOS
-                ADMITE CREACION DE NUEVO SERVICIO ASOCIADO A CLIENTE
-                ADMITE EDICION DE SERVICIO ASOCIADO A CLIENTE*/
+        $this->handlers = [
+            /* --Mapeo de todos los handlers a disposición--
+            TRAE LISTA COMPLETA DE CLIENTES
+            ADMITE BUSQUEDA DE TODOS LOS SERVICIOS ASOCIADOS
+            ADMITE CREACION DE NUEVO SERVICIO ASOCIADO A CLIENTE
+            ADMITE EDICION DE SERVICIO ASOCIADO A CLIENTE */
             'clientes' => 'handlerClientes.php',
             /* TRAE LISTA COMPLETA DE VEHICULOS ASOCIADOS A CLIENTE
                 ADMITE ASOCIACION DE VEHICULO SELECCIONADO A NUEVO SERVICIO
-                ADMITE NUEVOS TRABAJO ASOCIADOS A SERVICIO Y VEHICULO*/
-            'vehiculos' => 'hanlderVehiculos.php',
+                ADMITE NUEVOS TRABAJO ASOCIADOS A SERVICIO Y VEHICULO */
+            'vehiculos' => 'handlerVehiculos.php',
+            /* TRAE LISTA COMPLETA DE SERVICIOS Y SUS VINCULACIONES
+                ADMITE BUSQUEDA DE TODOS LOS TRABAJOS ASOCIADOS
+                ADMITE CREACION DE NUEVO TRABAJO ASOCIADO A SERVICIO DE CLIENTE
+                ADMITE EDICIÖN DE SERVICIO ASOCIADO A CLIENTE */
+            'servicios' => 'handlerServicios.php',
+
         ];
     }
 
@@ -45,7 +52,7 @@ class Collector
     private function dispatchToHandler($group, $action)
     {
         $handlerFile = $this->handlers[$group];
-        $handlerPath = __DIR__. '/handlers/' . $handlerFile;
+        $handlerPath = __DIR__ . '/handlers/' . $handlerFile;
         if (!file_exists($handlerPath)) {
             $this->showError('Handler no encontrado', 404);
             return;
@@ -53,7 +60,7 @@ class Collector
         try {
             require_once $handlerPath;
             $handlerClass = str_replace('.php', '', $handlerFile);//Obtiene el nombre de clase de forma dinámica
-            $handler = new $handlerClass(); 
+            $handler = new $handlerClass();
             $handler->handle($action, $_POST); //todos los archivos deben de contener la misma clase con nombre "handle" su contenido puede variar, ya que el archivo que lo incluye cambia dependiento el contenido de $_POST['action']
         } catch (Exception $e) {
             $this->showError('Error:' . $e, 500);

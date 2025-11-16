@@ -11,16 +11,20 @@
     <script src="js/sweetalert2-11.26.2/package/dist/sweetalert2.all.min.js"></script>
     <title>Service de vehículos</title>
 </head>
+<!--
+TODO: Añadir filtro para patente, modelo, importe, estado, fecha
+TODO: 
+-->
 
 <body class="p-3 mb-2 bg-secondary bg-gradient text-white">
     <div>
         <div class="card-header text-center fw-semibold">
             <ul class="nav nav-tabs">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="index.html">Listado de clientes</a>
+                    <a class="nav-link" href="index.html">Listado de clientes</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="services.html">Listado de servicios</a>
+                    <a class="nav-link active" aria-current="page" href="services.html">Listado de servicios</a>
                 </li>
                 <!-- <li class="nav-item">
                     <a class="nav-link" href="#">Link</a>
@@ -39,29 +43,31 @@
                     id="InputFilterTable">
                 <select class="custom-select" id="SelectFilterTable">
                     <option selected value="">⇓ FILTRO ⇓</option>
+                    <option value="servicio N°">Numero de Service</option>
+                    <option value="Patente">Patente</option>
+                    <option value="Modelo">Modelo</option>
+                    <option value="Importe">importe</option>
+                    <option value="Estado">Estado</option>
                     <option value="dni">DNI</option>
-                    <option value="nombre y apellido">Nombre y apellido</option>
-                    <option value="Email">EMAIL</option>
-                    <option value="movil">MOVIL</option>
-                    <option value="observaciones">OBSERVACIONES</option>
                 </select>
 
             </div>
-            <table id="tableClients" class="table table-bordered table-striped table-hover align-middle mb-0">
+            <table id="tableServices" class="table table-bordered table-striped table-hover align-middle mb-0">
                 <thead class="table-primary text-center">
                     <tr>
-                        <th>Usuario N°</th>
-                        <th>Nombre y apellido</th>
-                        <th>DNI</th>
-                        <th>Telefono</th>
-                        <th>Email</th>
-                        <th>Obervaciones</th>
-                        <th>Movil</th>
-                        <th class="col-auto">Acción</th>
+                        <th class="col-sm-1">Servicio N°</th>
+                        <th class="col col-sm-auto">Nombre y apellido</th>
+                        <th class="col col-sm-auto">DNI</th>
+                        <th class="col col-sm-1">Patente</th>
+                        <th class="col">Modelo</th>
+                        <th class="col">Importe</th>
+                        <th class="col">Fecha</th>
+                        <th class="col-auto">Estado</th>
                     </tr>
                 </thead>
-                <tbody id="listClients" role="button">
+                <tbody id="listServices" role="button">
                     <tr>
+                        <td>Cargando...</td>
                         <td>Cargando...</td>
                         <td>Cargando...</td>
                         <td>Cargando...</td>
@@ -72,75 +78,52 @@
                     </tr>
                 </tbody>
             </table>
-            <div class="modal fade" id="addStockModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content text-bg-secondary">
-
-                        <div class="modal-header">
-                            <h5 class="modal-title">Añadir nuevo servicio</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-
-                        <div class="modal-body">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item">
-                                    Vehículos: <strong><label id="prodLabel"></label></strong>
-                                </li>
-                                <li class="list-group-item">
-                                    Fecha: <input type="date" id="addStockDate" class="form-control">
-                                </li>
-                                <li class="list-group-item">
-                                    Cantidad: <input type="number" id="addStockNumber" class="form-control">
-                                </li>
-                                <li class="list-group-item">
-                                    Observaciones: <textarea id="addStockText" class="form-control"></textarea>
-                                </li>
-                            </ul>
-                        </div>
-
-                        <div class="modal-footer">
-                            <button id="addNewStockBtn" class="btn btn-success">
-                                <i class="bi bi-plus-lg"></i> Agregar
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
             <div class="modal fade" id="showStockModal" tabindex="-1">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="productNameStock">Situación de Stock</h5>
+                            <h5 class="modal-title" id="detailServicePanel">Detalles y configuración de servicio:</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body p-0 ">
+                        <div class="modal-body p-1 ">
                             <div class="table-responsive">
                                 <table id="tableListStock"
                                     class="table align-middle table-bordered table-striped table-hover table-sm">
-                                    <thead class="table-primary text-center">
+                                    <thead class="table-primary text-center" id="serviceTableHeadDetails">
                                         <tr>
-                                            <th style="width:5%;">Servicio N°</th>
-                                            <th class="text-nowrap" style="width:15%;">Fecha</th>
-                                            <th class="text-nowrap" style="width:15%;">Patente</th>
-                                            <th class="text-nowrap" style="width:20%;">Modelo</th>
-                                            <th class="text-nowrap" style="width:15%;">Monto Total</th>
-                                            <th style="width:15%;">Fecha estado actual</th>
-                                            <th class="text-nowrap" style="width:15%;">Estado actual</th>
+                                            <th style="width:5%;">Trabajo N°</th>
+                                            <th class="text-nowrap" style="width:15%;">Detalle de trabajo</th>
+                                            <th class="text-nowrap" style="width:15%;">Importe</th>
+                                            <th class="text-nowrap" style="width:15%;">Acción</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="table-group-divider" id="listStock"></tbody>
+                                    <tbody class="table-group-divider" id="listServiceDetails"></tbody>
                                 </table>
+                            </div>
+                            <span>Añadir nuevos trabajos al servicio</span>
+                            <div id="serviceActions">
+                                <div style="border: 1px solid black; padding: 1vh; border-radius: 3px;">
+                                    <select id="selectTrabajosList">
+                                        <option value="0" Disabled selected>Seleccionar trabajos</option>
+                                        <option value="">Service Completo</option>
+                                    </select>
+                                    <button class="btn btn-success">Añadir nuevo trabajo</button>
+                                </div>
+                                <div style="border: 1px solid black; padding: 1vh; border-radius: 3px;">
+                                    Estado actual: <strong id="spanCurrentState">Entregado</strong>
+                                    <button class="btn btn-success">Cambiar a estado: <span style="color: blue;"
+                                            id="showNextState">Terminado</span></button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <script>
-                loadAllClients();
+                loadAllServices();
                 $(".modal").on("hidden.bs.modal", function () {
                     $(this).find("input, textarea").val("");
-                    loadAllClients();
+                    loadAllServices();
                 });
                 $('#SelectFilterTable').change(function (e) {
                     if ($('#SelectFilterTable').val() == '') {
@@ -160,8 +143,8 @@
                 $("#InputFilterTable").on('input', function () {
                     var filter = $(this).val().toUpperCase();
                     var selected = $("#SelectFilterTable").val(); // valor del <select>
-                    var tableHead = $("#tableClients");
-                    var tableBody = $("#listClients");
+                    var tableHead = $("#tableServices");
+                    var tableBody = $("#listServices");
                     var tr = tableBody.find("tr");
                     // índice de columna según encabezado
                     var index = -1;
@@ -194,14 +177,14 @@
                         $(this).toggle(found);
                     });
                 });
-                function loadAllClients() {
+                function loadAllServices() {
                     $.ajax({
                         type: "POST",
                         url: "backend/collector.php",
-                        data: { action: "clientes_list" },
+                        data: { action: "servicios_list" },
                         dataType: "json",
                         success: function (response) {
-                            $("#listClients").empty();
+                            $("#listServices").empty();
                             $.each(response.data, function (index, content) {
                                 buttonPlus = $("<button>").attr({
                                     id: "add_" + content.id,
@@ -209,6 +192,12 @@
                                     onclick: "modalAdd(this, " + content.id + ")",
                                 });
                                 buttonPlus.html('<i class="bi bi-plus-lg"></i>');
+                                buttonMinus = $("<button>").attr({
+                                    id: "substract_" + content.id,
+                                    class: "btn btn-sm btn-danger",
+                                    onclick: "modalSubstract(this, " + content.id + ")",
+                                });
+                                buttonMinus.html('<i class="bi bi-dash-lg"></i>');
                                 tr = $("<tr>");
                                 tr.append(
                                     $("<td>")
@@ -230,26 +219,33 @@
                                 );
                                 tr.append(
                                     $("<td>")
-                                        .text(content.te_linea)
+                                        .text(content.patente)
                                         .attr("onclick", "loadStockData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
-                                        .text(content.email)
+                                        .text(content.nombre)
                                         .attr("onclick", "loadStockData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
-                                        .text(content.observaciones)
+                                        .text(content.importe)
+                                        .attr({
+                                            onclick: "loadStockData(" + content.id + ")",
+                                            class: "text-end"
+                                        })
+                                );
+                                tr.append(
+                                    $("<td>")
+                                        .text(content.fecha)
                                         .attr("onclick", "loadStockData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
-                                        .text(content.movil)
+                                        .text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : "entregado")
                                         .attr("onclick", "loadStockData(" + content.id + ")")
                                 );
-                                tr.append($("<td>").append(buttonPlus).attr({ class: "text-center" }));
-                                $("#listClients").append(tr);
+                                $("#listServices").append(tr);
                             });
                         },
                         error: function (xhr, status, error) {
@@ -263,33 +259,40 @@
                     $.ajax({
                         type: "POST",
                         url: "backend/collector.php",
-                        data: { action: "clientes_servicios", clientId: tableId },
+                        data: { action: "servicios_trabajos", serviceId: tableId },
                         dataType: "json",
                         success: function (response) {
-                            $("#listStock").empty();
+                            $("#listServiceDetails").empty();
+                            let count = 0;
                             $.each(response.data, function (index, content) {
-                                buttonRewind = $("<button>").attr({
-                                    id: "rewind_" + content.id,
-                                    class: "btn btn-sm btn-danger ",
-                                    onclick: "actionRewindStock(this, " + content.id + ")",
-                                });
-                                buttonRewind.html('<i class="bi bi-x-lg"></i>');
                                 tr = $("<tr>");
                                 $(tr).attr('id', content.id);
-                                $("#productNameStock").html(
-                                    $("<label>").text(
-                                        "Cliente: " + content.apellido_nombre
+                                $("#detailServicePanel").html(
+                                    $("<div>").addClass("service-card").append(
+                                        $("<div>").addClass("service-header").append(
+                                            $("<h4>").text(`Servicio #${content.s_id}`),
+                                            $("<h6>").text(`${content.v_patente}`)
+                                        ),
+                                        $("<div>").addClass("service-body").append(
+                                            $("<p>").html(`<strong>Fecha:</strong> ${content.s_fecha}`),
+                                            $("<p>").html(`<strong>Importe total:</strong> $${content.s_importe}`),
+                                            $("<p>").html(`<strong>Estado:</strong> ${content.s_estado == 0 ? "recibido" : content.s_estado == 1 ? "en proceso" : content.s_estado == 2 ? "terminado no entregado" : "entregado"}`)
+                                        ),
+                                        content.m_nombre ?
+                                            $("<p>").html(`<strong>Modelo:</strong> ${content.m_nombre}`) :
+                                            null,
+
+                                        $("<p>").html(`<strong>Trabajos:</strong> ${count = count + 1}`)
                                     )
                                 );
-                                tr.append($("<td>").text(content.id)); // fila Nro:
-                                tr.append($("<td>").text(content.fecha));
-                                tr.append($("<td>").text(content.patente));
-                                tr.append($("<td>").text(content.nombre));
-                                tr.append($("<td>").text(content.importe).attr({ class: 'text-end' }));
-                                tr.append($("<td>").text(content.fecha_estado));
-                                tr.append($("<td>").text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : "entregado"));
-                                tr.append(buttonRewind);
-                                $("#listStock").append(tr);
+                                tr.append($("<td>").text(index + 1));
+                                tr.append($("<td>").text(content.t_nombre));
+                                tr.append($("<td>").text(content.sd_importe));
+                                $("#listServiceDetails").append(tr);
+                            });
+                            $('#spanCurrentState').text(response.data[0].s_estado == 0 ? "recibido" : response.data[0].s_estado == 1 ? "en proceso" : response.data[0].s_estado == 2 ? "terminado no entregado" : "entregado");
+                            $.each(response.jobsList, function (index, content) {
+                                $('#selectTrabajosList').append($('<option>').val(content.id).text(content.nombre + " Importe:" + content.importe));
                             });
                         },
                         error: function (xhr, status, error) {
