@@ -69,18 +69,19 @@ class HandlerServicios
             t.id AS t_id,
             t.nombre AS t_nombre,
             sd.cantidad AS sd_cantidad,
-            sd.importe AS sd_importe
+            sd.importe AS sd_importe,
+            sd.id AS sd_id
             FROM servicios AS s 
             INNER JOIN vehiculos AS v ON s.id_vehiculo = v.id
             INNER JOIN modelos AS m ON v.id_modelo = m.id
             INNER JOIN clientes AS c ON v.id_cliente = c.id
-            LEFT JOIN servicios_det AS sd ON s.id = sd.id_servicio OR v.id = sd.id_vehiculo
+            LEFT JOIN servicios_det AS sd ON s.id = sd.id_servicio
             LEFT JOIN trabajos AS t ON sd.id_trabajo = t.id
             WHERE s.id= ?";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$data['serviceId']]);
             $product = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            $sql = "SELECT * FROM trabajos";
+            $sql = "SELECT * FROM trabajos ORDER BY importe ASC";
             $stmt2 = $this->pdo->prepare($sql);
             $stmt2->execute();
             $jobs = $stmt2->fetchAll(PDO::FETCH_ASSOC);

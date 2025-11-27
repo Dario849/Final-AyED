@@ -50,7 +50,7 @@ class HandlerClientes
     private function serviciosCliente($data)
     {
         try {
-            $sql = "SELECT s.id, v.patente, m.nombre,c.apellido_nombre, s.fecha, s.importe,s.fecha_estado,s.estado FROM vehiculos AS v JOIN modelos AS m ON v.id_modelo = m.id JOIN clientes AS c ON c.id = v.id_cliente JOIN servicios AS s ON s.id_vehiculo = v.id WHERE c.id = ?";
+            $sql = "SELECT c.id AS c_id, v.id AS v_id, s.id AS s_id, v.patente, m.nombre,c.apellido_nombre, s.fecha, s.importe,s.fecha_estado,s.estado FROM vehiculos AS v JOIN modelos AS m ON v.id_modelo = m.id JOIN clientes AS c ON c.id = v.id_cliente LEFT JOIN servicios AS s ON s.id_vehiculo = v.id WHERE c.id = ?";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$data['clientId']]);
             $product = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -127,6 +127,14 @@ TODO:
                 </div>
             </div>
             <script>
+                $(function () {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const serviceId = urlParams.get('id');
+                    const isService = urlParams.get('isservice');
+                    if (!isNaN(serviceId) && isService === 'true') {
+                        loadServiceData(serviceId);
+                    }
+                });
                 loadAllServices();
                 $(".modal").on("hidden.bs.modal", function () {
                     $(this).find("input, textarea").val("");
@@ -275,40 +283,52 @@ TODO:
                                 buttonMinus = $("<button>").attr({
                                     id: "substract_" + content.s_id,
                                     class: "btn btn-sm btn-danger",
-                                    onclick: "modalServicesSubstract(this, " + content.s_id + ")",
+                                    onclick: "modalServicesSubstract(this, " + content.t_id + "," + content.sd_id + ")",
                                 });
                                 buttonMinus.html('<i class="bi bi-dash-lg"></i>');
                                 tr = $("<tr>");
                                 $(tr).attr('id', content.id);
-                                $("#detailServicePanel").html(
+                                $("#detailServicePanel").html(// Encabezado de ventana modal, presenta todos los datos padre del servicio, cliente, vehículo
                                     $("<div>").addClass("service-card").append(
                                         $('<hidden>').attr({ type: 'hidden', id: 'contextId', serviceId: content.s_id, vehicleId: content.v_id, clientId: content.c_id }),
                                         $("<div>").addClass("service-header").append(
                                             $("<h4>").text(`Servicio #${content.s_id}`),
-                                            $("<h6>").text(`${content.v_patente}`)
+                                            $("<h6>").html(`<strong>Patente:</strong> ${content.v_patente}`),
+                                            $("<h6>").html(`<strong>Propietario:</strong> ${content.apellido_nombre}`)
                                         ),
                                         $("<div>").addClass("service-body").append(
-                                            $("<p>").html(`<strong>Fecha:</strong> ${content.s_fecha}`),
-                                            $("<p>").html(`<strong>Importe total:</strong> $${content.s_importe}`),
-                                            $("<p>").html(`<strong>Estado:</strong> ${content.s_estado == 0 ? "recibido" : content.s_estado == 1 ? "en proceso" : content.s_estado == 2 ? "terminado no entregado" : "entregado"}`)
+                                            $("<h6>").html(`<strong>Fecha:</strong> ${content.s_fecha}`),
+                                            $("<h6>").html(`<strong>Importe total:</strong> $${content.s_importe}`),
+                                            $("<h6>").html(`<strong>Estado:</strong> ${content.s_estado == 0 ? "recibido" : content.s_estado == 1 ? "en proceso" : content.s_estado == 2 ? "terminado no entregado" : "entregado"}`)
                                         ),
                                         content.m_nombre ?
-                                            $("<p>").html(`<strong>Modelo:</strong> ${content.m_nombre}`) :
+                                            $("<h6>").html(`<strong>Modelo:</strong> ${content.m_nombre}`) :
                                             null,
-                                        $("<p>").html(`<strong>Trabajos:</strong> ${count = count + 1}`)
+                                        $("<h6>").html(`<strong>Trabajos:</strong> ${response.data[0].t_id == null?0:count = count + 1}`)
                                     )
                                 );
-                                tr.append($("<td>").text(index + 1));
-                                tr.append($("<td>").text(content.t_nombre));
-                                tr.append($("<td>").text(content.sd_importe));
-                                tr.append($("<td>").text(content.sd_cantidad));
-                                tr.append($("<td>").append(buttonMinus));
-                                $("#listServiceDetails").append(tr);
+                                if (response.data[0].t_id == null) { // NO presenta trabajos asignados?
+                                    console.log('true: ' + response.data[0].t_id);
+                                    tr.append($("<td>").text('--'));
+                                    tr.append($("<td>").text('--'));
+                                    tr.append($("<td>").text('--'));
+                                    tr.append($("<td>").text('--'));
+                                    tr.append($("<td>").text('--'));
+                                    $("#listServiceDetails").append(tr);
+                                } else {
+                                    console.log('false: ' + response.data[0].t_id);
+                                    tr.append($("<td>").text(index + 1));
+                                    tr.append($("<td>").text(content.t_nombre));
+                                    tr.append($("<td>").text(content.sd_importe));
+                                    tr.append($("<td>").text(content.sd_cantidad));
+                                    tr.append($("<td>").append(buttonMinus));
+                                    $("#listServiceDetails").append(tr);
+                                }
                             });
                             $('#spanCurrentState').text(response.data[0].s_estado == 0 ? "recibido" : response.data[0].s_estado == 1 ? "en proceso" : response.data[0].s_estado == 2 ? "terminado no entregado" : "entregado");
                             $('#selectTrabajosList').empty();
                             $('#selectTrabajosList').append($('<option>').attr({ disabled: true, selected: true }).text('Seleccione tipo de trabajo - Importe'));
-                            response.jobsList.forEach(element => {
+                            response.jobsList.forEach(element => {//Lista de trabajos a disposicion. ORDEN: por importe en orden ascendente (menor precio = mayor demanda)
                                 $('#selectTrabajosList').append($('<option>').val(element.id).text(element.nombre + " - Importe: " + element.importe));
                             });
                             $('#btnAddNewJobToService').attr('onclick', 'addNewJobOnServiceSelected(' + response.data[0].s_id + ')');
@@ -320,14 +340,13 @@ TODO:
                 }
                 function addNewJobOnServiceSelected(serviceId) {
                     if (!$('#selectTrabajosList').val()) { console.warn('Seleccione primero tipo de trabajo'); return; } else {
-                        console.log('Se registra nuevo trabajo:' + $('#selectTrabajosList').val() + 'Para servicio:' + serviceId + ' Cantidad:' + $('#btnCountNewJobToService').data('count'));
                         $.ajax({
                             type: "POST",
                             url: "backend/collector.php",
                             data: { action: "servicios_agregar", serviceId: serviceId, vehicleId: $('#contextId').attr('vehicleId'), jobId: $('#selectTrabajosList').val(), jobCount: $('#btnCountNewJobToService').data('count') },
                             dataType: "json",
                             success: function (response) {
-
+                                loadServiceData(serviceId);
                             },
                             error: function (xhr, status) {
                                 console.warn("Respuesta:", { status: status, text: xhr.responseJSON['message'] });
@@ -358,6 +377,9 @@ TODO:
                         $("#" + modalId)[0]
                     );
                     modalInstance.show();
+                }
+                function modalServicesSubstract(element, t_id, sd_id) {
+                    console.log('Elimina trabajo id:' + t_id + ' de servicio:' + $('#contextId').attr('serviceId') + ' Y detalle de servicio: ' + sd_id);
                 }
 
             </script>

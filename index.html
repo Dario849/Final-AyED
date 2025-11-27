@@ -84,7 +84,7 @@
                         <div class="modal-body">
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">
-                                    Vehículos: <strong><label id="prodLabel"></label></strong>
+                                    Cliente seleccionado: <strong><label id="clientContentAddService"></label></strong>
                                 </li>
                                 <li class="list-group-item">
                                     Fecha: <input type="date" id="addStockDate" class="form-control">
@@ -267,30 +267,97 @@
                         dataType: "json",
                         success: function (response) {
                             $("#listStock").empty();
-                            $.each(response.data, function (index, content) {
-                                buttonRewind = $("<button>").attr({
-                                    id: "rewind_" + content.id,
-                                    class: "btn btn-sm btn-danger ",
-                                    onclick: "actionRewindStock(this, " + content.id + ")",
-                                });
-                                buttonRewind.html('<i class="bi bi-x-lg"></i>');
-                                tr = $("<tr>");
-                                $(tr).attr('id', content.id);
-                                $("#productNameStock").html(
-                                    $("<label>").text(
-                                        "Cliente: " + content.apellido_nombre
-                                    )
+                            $("#productNameStock").empty();
+                            if (response.data.every(item => item.s_id == null)) {// Si todos los vehículos del cliente no tienen servicios asociados
+                                $("#productNameStock").append(
+                                    $("<h6>").text("Cliente: " + response.data[0].apellido_nombre + " (Todos sus vehículos no tienen servicios asociados)"),
+                                    $("<h6>").text(" En caso de que desee añadir nuevos servicios, por favor cierre este modal y utilice el botón '+' en la tabla de clientes.")
                                 );
-                                tr.append($("<td>").text(content.id)); // fila Nro:
-                                tr.append($("<td>").text(content.fecha));
-                                tr.append($("<td>").text(content.patente));
-                                tr.append($("<td>").text(content.nombre));
-                                tr.append($("<td>").text(content.importe).attr({ class: 'text-end' }));
-                                tr.append($("<td>").text(content.fecha_estado));
-                                tr.append($("<td>").text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : "entregado"));
-                                tr.append(buttonRewind);
-                                $("#listStock").append(tr);
-                            });
+                                th = $("<tr>");
+                                th.append($("<th>").text('Vehículo N°'));
+                                th.append($("<th>").text('Patente'));
+                                th.append($("<th>").text('Modelo'));
+                                th.append($("<th>").text('Añadir servicio'));
+                                $('#tableListStock thead').html(th).attr({
+                                    class: 'table-primary text-center'
+                                });
+                                $.each(response.data, function (index, content) {
+                                    buttonPlus = $("<button>").attr({
+                                        id: "add_" + content.id,
+                                        class: "btn btn-sm btn-success me-1",
+                                        onclick: "modalAdd(this, " + content.id + ")",
+                                    });
+                                    buttonPlus.html('<i class="bi bi-plus-lg"></i>');
+                                    buttonRewind = $("<button>").attr({
+                                        id: "rewind_" + content.id,
+                                        class: "btn btn-sm btn-danger ",
+                                        onclick: "actionRewindStock(this, " + content.id + ")",
+                                    });
+                                    buttonRewind.html('<i class="bi bi-x-lg"></i>');
+                                    tr = $("<tr>");
+                                    $(tr).attr('id', content.id);
+                                    tr.append($("<td>").text(content.v_id)); // fila Nro:
+                                    tr.append($("<td>").text(content.patente));
+                                    tr.append($("<td>").text(content.nombre));
+                                    tr.append($("<td>").append(buttonPlus).attr({ class: "text-center" }));
+                                    $("#listStock").append(tr);
+                                });
+                            } else {
+                                $("#productNameStock").html($("<label>").text("Cliente: " + response.data[0].apellido_nombre));
+                                th = $("<tr>");
+                                th.append($("<th>").text('Servicio N°'));
+                                th.append($("<th>").text('Fecha'));
+                                th.append($("<th>").text('Patente'));
+                                th.append($("<th>").text('Modelo'));
+                                th.append($("<th>").text('Monto Total'));
+                                th.append($("<th>").text('Fecha estado actual'));
+                                th.append($("<th>").text('Estado actual'));
+                                th.append($("<th>").text('Ir a servicio'));
+                                $('#tableListStock thead').html(th).attr({
+                                    class: 'table-primary text-center'
+                                });
+                                $.each(response.data, function (index, content) {
+                                    buttonRewind = $("<button>").attr({
+                                        id: "rewind_" + content.id,
+                                        class: "btn btn-sm btn-danger ",
+                                        onclick: "actionRewindStock(this, " + content.id + ")",
+                                    });
+                                    buttonRewind.html('<i class="bi bi-x-lg"></i>');
+                                    tr = $("<tr>");
+                                    tr.append($("<td>").text(content.v_id ? content.v_id : 'Sin servicio asociado')); // fila Nro:
+                                    tr.append($("<td>").text(content.fecha ? content.fecha : '--')); // fecha
+                                    tr.append($("<td>").text(content.patente));
+                                    tr.append($("<td>").text(content.nombre));
+                                    tr.append($("<td>").text((content.importe != null) ? content.importe : '--').attr({ class: 'text-end' }));
+                                    tr.append($("<td>").html(content.fecha_estado ? content.fecha_estado : '--'));
+                                    tr.append($("<td>").text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : content.estado == 3 ? "entregado" : "--"));
+                                    content.s_id ? tr.append($("<td>").html($('<a>').text("Ver servicio").attr("href", "/services.html?id=" + content.s_id + "&isservice=true"))) : tr.append($("<td>").text("--"));
+                                    $("#listStock").append(tr);
+                                });
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.warn("Respuesta: " + status + "\n" + error);
+                        },
+                    });
+                }
+                function modalAdd(el, clientId) {
+                    showModal("addStockModal");
+                    $.ajax({
+                        type: "POST",
+                        url: "backend/collector.php",
+                        data: { action: "clientes_get", clientId: clientId },
+                        dataType: "json",
+                        success: function (response) {
+                            $("#clientContentAddService").text(
+                                response.data.apellido_nombre +
+                                " - DNI: " +
+                                response.data.DNI
+                            );
+                            $("#addNewStockBtn").attr(
+                                "onclick",
+                                "addNewServiceToclientVehicle(" + clientId + ",$('#selectVehicle').val()" + ")"
+                            );
                         },
                         error: function (xhr, status, error) {
                             console.warn("Respuesta: " + status + "\n" + error);
