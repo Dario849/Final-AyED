@@ -87,13 +87,18 @@
                                     Cliente seleccionado: <strong><label id="clientContentAddService"></label></strong>
                                 </li>
                                 <li class="list-group-item">
-                                    Fecha: <input type="date" id="addStockDate" class="form-control">
+                                    Vehículo seleccionado: <strong><label id="vehicleContentAddService"
+                                            data-v_id="">---</label></strong><br>
+                                    Seleccionar otro vehículo: <select id="selectOtherVehicle"
+                                        class="form-select"></select>
+                                </li>
+
+                                <li class="list-group-item">
+                                    Fecha: <input type="date" id="serviceDate" class="form-control">
                                 </li>
                                 <li class="list-group-item">
-                                    Cantidad: <input type="number" id="addStockNumber" class="form-control">
-                                </li>
-                                <li class="list-group-item">
-                                    Observaciones: <textarea id="addStockText" class="form-control"></textarea>
+                                    Importe inicial del servicio: <input type="number" id="serviceValue"
+                                        class="form-control" value="0">
                                 </li>
                             </ul>
                         </div>
@@ -157,6 +162,11 @@
                         });
                     }
                 });
+                $("#selectOtherVehicle").change(function (e) {
+                    var selectedVehicleId = $(this).val();
+                    var selectedVehicleText = $(this).find("option:selected").text();
+                    $("#vehicleContentAddService").text(selectedVehicleText).attr('data-v_id', selectedVehicleId);
+                });
                 $("#InputFilterTable").on('input', function () {
                     var filter = $(this).val().toUpperCase();
                     var selected = $("#SelectFilterTable").val(); // valor del <select>
@@ -206,7 +216,7 @@
                                 buttonPlus = $("<button>").attr({
                                     id: "add_" + content.id,
                                     class: "btn btn-sm btn-success me-1",
-                                    onclick: "modalAdd(this, " + content.id + ")",
+                                    onclick: "modalAddService(this, " + content.id + ")",
                                 });
                                 buttonPlus.html('<i class="bi bi-plus-lg"></i>');
                                 tr = $("<tr>");
@@ -283,17 +293,17 @@
                                 });
                                 $.each(response.data, function (index, content) {
                                     buttonPlus = $("<button>").attr({
-                                        id: "add_" + content.id,
+                                        id: "add_" + content.c_id,
                                         class: "btn btn-sm btn-success me-1",
-                                        onclick: "modalAdd(this, " + content.id + ")",
+                                        onclick: "modalAddService(this, " + content.c_id + "," + content.v_id + ")",
                                     });
                                     buttonPlus.html('<i class="bi bi-plus-lg"></i>');
-                                    buttonRewind = $("<button>").attr({
-                                        id: "rewind_" + content.id,
-                                        class: "btn btn-sm btn-danger ",
-                                        onclick: "actionRewindStock(this, " + content.id + ")",
-                                    });
-                                    buttonRewind.html('<i class="bi bi-x-lg"></i>');
+                                    // buttonRewind = $("<button>").attr({
+                                    //     id: "rewind_" + content.id,
+                                    //     class: "btn btn-sm btn-danger ",
+                                    //     onclick: "actionRewindStock(this, " + content.id + ")",
+                                    // });
+                                    // buttonRewind.html('<i class="bi bi-x-lg"></i>');
                                     tr = $("<tr>");
                                     $(tr).attr('id', content.id);
                                     tr.append($("<td>").text(content.v_id)); // fila Nro:
@@ -341,23 +351,128 @@
                         },
                     });
                 }
-                function modalAdd(el, clientId) {
-                    showModal("addStockModal");
+                function modalAddService(el, clientId, vehicleId) {
+                    if (vehicleId) {
+                        showModal("addStockModal");
+                        $('#showStockModal').modal('hide');
+                        $.ajax({
+                            type: "POST",
+                            url: "backend/collector.php",
+                            data: { action: "clientes_nuevo", clientId: clientId, vehicleId: vehicleId },
+                            dataType: "json",
+                            success: function (response) {
+                                $("#clientContentAddService").text(
+                                    response.client.apellido_nombre +
+                                    " - DNI: " +
+                                    response.client.DNI
+                                );
+                                $("#vehicleContentAddService").text(
+                                    "Patente: " +
+                                    response.selectedVehicle.patente +
+                                    " - Modelo: " +
+                                    response.selectedVehicle.nombre
+                                ).attr('data-v_id', response.selectedVehicle.v_id);
+                                var selectOtherVehicle = $("#selectOtherVehicle");
+                                selectOtherVehicle.empty();
+                                selectOtherVehicle.append(
+                                    $("<option>").val("").text("⇓ Cambiar vehículo pre-seleccionado ⇓").attr({ selected: true, disabled: true }));
+                                $.each(response.vehicles, function (index, vehicle) {
+                                    var option = $("<option>")
+                                        .val(vehicle.v_id)
+                                        .text(
+                                            "Patente: " +
+                                            vehicle.patente +
+                                            " - Modelo: " +
+                                            vehicle.nombre
+                                        );
+                                    selectOtherVehicle.append(option);
+                                });
+                                $("#addNewStockBtn").attr(
+                                    "onclick",
+                                    "addNewServiceToclientVehicle(" + clientId + ", $('#vehicleContentAddService').attr('data-v_id')" + ")"
+                                );
+                            },
+                            error: function (xhr, status, error) {
+                                console.warn("Respuesta: " + status + "\n" + error);
+                            },
+                        });
+                        return;
+                    } else {
+                        showModal("addStockModal");
+                        $.ajax({
+                            type: "POST",
+                            url: "backend/collector.php",
+                            data: { action: "clientes_nuevo", clientId: clientId },
+                            dataType: "json",
+                            success: function (response) {
+                                $("#clientContentAddService").text(
+                                    response.client.apellido_nombre +
+                                    " - DNI: " +
+                                    response.client.DNI
+                                );
+                                var selectOtherVehicle = $("#selectOtherVehicle");
+                                selectOtherVehicle.empty();
+                                selectOtherVehicle.append(
+                                    $("<option>").val("").text("⇓ Seleccione un vehículo ⇓").attr({ selected: true, disabled: true }));
+                                $.each(response.vehicles, function (index, vehicle) {
+                                    var option = $("<option>")
+                                        .val(vehicle.v_id)
+                                        .text(
+                                            "Patente: " +
+                                            vehicle.patente +
+                                            " - Modelo: " +
+                                            vehicle.nombre
+                                        );
+                                    selectOtherVehicle.append(option);
+                                });
+
+                                $("#addNewStockBtn").attr(
+                                    "onclick",
+                                    "addNewServiceToclientVehicle(" + clientId + ", $('#vehicleContentAddService').attr('data-v_id')" + ")"
+                                );
+                            },
+                            error: function (xhr, status, error) {
+                                console.warn("Respuesta: " + status + "\n" + error);
+                            },
+                        });
+                    }
+                }
+                function addNewServiceToclientVehicle(clientId, vehicleId) {
+                    console.log("Agregar nuevo servicio para clienteId: " + clientId + ", vehicleId: " + vehicleId);
                     $.ajax({
                         type: "POST",
                         url: "backend/collector.php",
-                        data: { action: "clientes_get", clientId: clientId },
+                        data: {
+                            action: "clientes_servicioAgregar",
+                            clientId: clientId,
+                            vehicleId: vehicleId,
+                            fecha: $("#serviceDate").val(),
+                            importe: $("#serviceValue").val(),
+                        },
                         dataType: "json",
                         success: function (response) {
-                            $("#clientContentAddService").text(
-                                response.data.apellido_nombre +
-                                " - DNI: " +
-                                response.data.DNI
-                            );
-                            $("#addNewStockBtn").attr(
-                                "onclick",
-                                "addNewServiceToclientVehicle(" + clientId + ",$('#selectVehicle').val()" + ")"
-                            );
+                            if (response.status === "success") {// Se presenta alerta, con opción para ir al servicio nuevo creado
+                                Swal.fire({
+                                    icon: "success",
+                                    title: "Servicio agregado",
+                                    text: "El nuevo servicio ha sido agregado exitosamente.",
+                                    showCancelButton: true,
+                                    confirmButtonText: "Ir al servicio",
+                                    cancelButtonText: "Cerrar",
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = "/services.html?id=" + response.serviceId + "&isservice=true";
+                                    }
+                                });
+                                $('#addStockModal').modal('hide');
+                            } else {
+                                Swal.fire({
+                                    icon: "error",
+                                    title: "Error",
+                                    text: response.message || "Hubo un error al agregar el servicio.",
+                                    confirmButtonText: "Aceptar"
+                                });
+                            }
                         },
                         error: function (xhr, status, error) {
                             console.warn("Respuesta: " + status + "\n" + error);
