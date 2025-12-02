@@ -22,12 +22,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="services.html">Listado de servicios</a>
                 </li>
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Link</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-                </li> -->
             </ul>
         </div>
         <div class="card-body p-0">
@@ -224,39 +218,39 @@
                                     $("<td>")
                                         .text(content.id)
                                         .attr({
-                                            onclick: "loadStockData(" + content.id + ")",
+                                            onclick: "loadClientsData(" + content.id + ")",
                                             id: content.id,
                                         })
                                 );
                                 tr.append(
                                     $("<td>")
                                         .text(content.apellido_nombre)
-                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                        .attr("onclick", "loadClientsData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
                                         .text(content.DNI)
-                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                        .attr("onclick", "loadClientsData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
                                         .text(content.te_linea)
-                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                        .attr("onclick", "loadClientsData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
                                         .text(content.email)
-                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                        .attr("onclick", "loadClientsData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
                                         .text(content.observaciones)
-                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                        .attr("onclick", "loadClientsData(" + content.id + ")")
                                 );
                                 tr.append(
                                     $("<td>")
                                         .text(content.movil)
-                                        .attr("onclick", "loadStockData(" + content.id + ")")
+                                        .attr("onclick", "loadClientsData(" + content.id + ")")
                                 );
                                 tr.append($("<td>").append(buttonPlus).attr({ class: "text-center" }));
                                 $("#listClients").append(tr);
@@ -268,7 +262,7 @@
                     });
                 }
 
-                function loadStockData(tableId) {
+                function loadClientsData(tableId) {
                     showModal("showStockModal");
                     $.ajax({
                         type: "POST",
@@ -298,15 +292,9 @@
                                         onclick: "modalAddService(this, " + content.c_id + "," + content.v_id + ")",
                                     });
                                     buttonPlus.html('<i class="bi bi-plus-lg"></i>');
-                                    // buttonRewind = $("<button>").attr({
-                                    //     id: "rewind_" + content.id,
-                                    //     class: "btn btn-sm btn-danger ",
-                                    //     onclick: "actionRewindStock(this, " + content.id + ")",
-                                    // });
-                                    // buttonRewind.html('<i class="bi bi-x-lg"></i>');
                                     tr = $("<tr>");
                                     $(tr).attr('id', content.id);
-                                    tr.append($("<td>").text(content.v_id)); // fila Nro:
+                                    tr.append($("<td>").text(content.v_id));
                                     tr.append($("<td>").text(content.patente));
                                     tr.append($("<td>").text(content.nombre));
                                     tr.append($("<td>").append(buttonPlus).attr({ class: "text-center" }));
@@ -479,7 +467,7 @@
                         },
                     });
                 }
-                function showModal(modalId) {
+                function showModal(modalId) { // muestra el modal basado en su ID
                     const modalInstance = bootstrap.Modal.getOrCreateInstance(
                         $("#" + modalId)[0]
                     );

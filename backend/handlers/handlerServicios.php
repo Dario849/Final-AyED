@@ -16,12 +16,13 @@ class HandlerServicios
                 return $this->listServices($data);
             case 'trabajos'://Trae relación completa entre un servicio, y sus trabajos, trae información completa del servicio, cliente, y matriz completa de trabajos realizados (se espera id de servicio como parametro).
                 return $this->listJobsOfService($data);
-            case 'nuevo'://Realizar insersión de nuevo servicio a cliente + vehículo pre-seleccionados (se inicia con monto en 0, estado = Recibido, con 0 trabajos realizados)
-
+            case 'modificar'://Realizar modificación del estado del servicio, como estado terminado no entregado y entregado, modifica fecha estado a su vez.
+                return $this->modifyServiceState($data);
             case 'agregar'://Realizar insersión a servicio existente, un nuevo trabajo, su monto, fecha, y insertar en consecuencia a tabla servicio el monto total actualizado, fecha estado + estado = en proceso
                 return $this->addJobToService($data);
-            case 'modificar'://Realizar cambios al estado del servicio, como estado terminado no entregado y entregado, modifica fecha estado a su vez.
-
+            // case 'modificar'://Realizar cambios al estado del servicio, como estado terminado no entregado y entregado, modifica fecha estado a su vez.
+            case 'substraerTrabajo'://Eliminar un trabajo de un servicio, actualizar monto total del servicio en consecuencia.
+                return $this->substractJobFromService($data);
             default:
                 throw new Exception("Acción no soportada", 1);
         }
@@ -30,7 +31,7 @@ class HandlerServicios
     private function listServices($data)
     {
         try {
-            $sql = "SELECT s.*, c.apellido_nombre,c.DNI,v.patente,m.nombre FROM servicios AS s LEFT JOIN vehiculos AS v ON v.id = s.id_vehiculo LEFT JOIN clientes AS c ON c.id = v.id_cliente LEFT JOIN modelos AS m ON m.id = v.id_modelo";
+            $sql = "SELECT s.*, c.apellido_nombre,c.DNI,v.patente,m.nombre FROM servicios AS s LEFT JOIN vehiculos AS v ON v.id = s.id_vehiculo LEFT JOIN clientes AS c ON c.id = v.id_cliente LEFT JOIN modelos AS m ON m.id = v.id_modelo ORDER BY s.importe DESC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute();
             $product = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -102,19 +103,35 @@ class HandlerServicios
         try {
             $total = 0;
             $this->pdo->beginTransaction();
-            $sql = "SELECT importe FROM trabajos WHERE id = ?";
+            $sql = "SELECT importe FROM trabajos WHERE id = ?";//trae el importe del trabajo
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$data['jobId']]);
             $jobImporte = $stmt->fetchColumn();
             $total = $data['jobCount'] * $jobImporte;
 
-            $sql = "INSERT INTO servicios_det (id_servicio, id_trabajo, id_vehiculo, cantidad, importe) VALUES (?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO servicios_det (id_servicio, id_trabajo, id_vehiculo, cantidad, importe) VALUES (?, ?, ?, ?, ?)"; // inserta el nuevo trabajo, sin importar si es el primero del servicio, o ya existen anteriores.
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$data['serviceId'], $data['jobId'], $data['vehicleId'], $data['jobCount'], $jobImporte]);
 
-            $sql = "UPDATE servicios SET importe = importe + ?, estado = '1', fecha_estado = NOW() WHERE id = ?";
+            $sql = "SELECT fecha_estado FROM servicios WHERE id = ?"; // busca si hay importe presente en el servicio (un servicio nuevo debería de tener 0 en mayoria de los casos)
             $stmt = $this->pdo->prepare($sql);
-            $stmt->execute([$total, $data['serviceId']]);
+            $stmt->execute([$data['serviceId']]);
+            $dateState = $stmt->fetchColumn();
+
+            $sql = "SELECT COUNT(*) FROM servicios_det WHERE id_servicio = ?"; //busca servicios_det presentes asociados al servicio
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$data['serviceId']]);
+            $hasServiceDetails = $stmt->fetchColumn() > 1; // si el resultado es mayor a 1, almacena el dato
+            if(!$dateState && (!$hasServiceDetails)){
+                $sql = "UPDATE servicios SET importe = importe + ?, estado = '1', fecha_estado = NOW() WHERE id = ?"; // si no hay importe existen, y tampoco tiene otros detalles de servicio, modifica el estado, y el importe, ya que se asume es el primer trabajo del servicio.
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$total, $data['serviceId']]);
+            }else{
+                $sql = "UPDATE servicios SET importe = importe + ? WHERE id = ?"; // si es falso, entonces hay otros trabajos anteriores a este, solo actualiza importe.
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$total, $data['serviceId']]);
+            }
+
 
             $this->pdo->commit();
 
@@ -122,6 +139,49 @@ class HandlerServicios
         } catch (PDOException $e) {
             http_response_code(500);
             echo json_encode(['status' => 'error', 'message' => 'Error al buscar el producto: ' . $e->getMessage()]);
+        }
+    }
+    private function substractJobFromService($data)
+    {
+        try {
+            $this->pdo->beginTransaction();
+
+            if ($data['jobCount'] > 1) {
+                $sql = "UPDATE servicios_det SET cantidad = cantidad - 1 WHERE id = ? AND id_trabajo = ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$data['serviceDetailId'], $data['jobId']]);
+
+                $sql = "UPDATE servicios SET importe = importe - (SELECT importe FROM trabajos WHERE id = ?) WHERE id = ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$data['jobId'], $data['serviceId']]);
+            } else {
+                $sql = "DELETE FROM servicios_det WHERE id = ? AND id_trabajo = ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$data['serviceDetailId'], $data['jobId']]);
+                $sql = "UPDATE servicios SET importe = importe - (SELECT importe FROM trabajos WHERE id = ?) WHERE id = ?";
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute([$data['jobId'], $data['serviceId']]);
+            }
+
+            $this->pdo->commit();
+
+            echo json_encode(['status' => 'success', 'message' => 'Trabajo eliminado del servicio correctamente.']);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error al eliminar el trabajo del servicio: ' . $e->getMessage()]);
+        }
+    }
+    private function modifyServiceState($data)
+    {
+        try {
+            $sql = "UPDATE servicios SET estado = ?, fecha_estado = NOW() WHERE id = ?";
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([$data['newState'], $data['serviceId']]);
+
+            echo json_encode(['status' => 'success', 'message' => 'Estado del servicio modificado correctamente.']);
+        } catch (PDOException $e) {
+            http_response_code(500);
+            echo json_encode(['status' => 'error', 'message' => 'Error al modificar el estado del servicio: ' . $e->getMessage()]);
         }
     }
 }

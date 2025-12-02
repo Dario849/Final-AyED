@@ -105,13 +105,12 @@ class HandlerClientes
         }
 
         try {
-            $sql = "INSERT INTO servicios (id_vehiculo, fecha, importe, estado, fecha_estado) VALUES (?, ?, ?, '0', ?)";
+            $sql = "INSERT INTO servicios (id_vehiculo, fecha, importe, estado) VALUES (?, ?, ?, '0')";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([
                 $data['vehicleId'],
                 $data['fecha'],
-                $data['importe'],
-                $data['fecha']
+                $data['importe']
             ]);
             $newServiceId = $this->pdo->lastInsertId();
             echo json_encode(['status' => 'success', 'message' => 'Servicio agregado correctamente.', 'serviceId' => $newServiceId]);

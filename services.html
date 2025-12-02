@@ -11,10 +11,21 @@
     <script src="js/sweetalert2-11.26.2/package/dist/sweetalert2.all.min.js"></script>
     <title>Service de vehículos</title>
 </head>
-<!--
-TODO: Añadir filtro para patente, modelo, importe, estado, fecha
-TODO: 
--->
+<style>
+    .sortable {
+        cursor: pointer;
+    }
+
+    .sortable.asc::after {
+        content: " \25B2";
+        /* Up arrow */
+    }
+
+    .sortable.desc::after {
+        content: " \25BC";
+        /* Down arrow */
+    }
+</style>
 
 <body class="p-3 mb-2 bg-secondary bg-gradient text-white">
     <div>
@@ -26,12 +37,6 @@ TODO:
                 <li class="nav-item">
                     <a class="nav-link active" aria-current="page" href="services.html">Listado de servicios</a>
                 </li>
-                <!-- <li class="nav-item">
-                    <a class="nav-link" href="#">Link</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-                </li> -->
             </ul>
         </div>
         <div class="card-body p-0">
@@ -55,14 +60,15 @@ TODO:
             <table id="tableServices" class="table table-bordered table-striped table-hover align-middle mb-0">
                 <thead class="table-primary text-center">
                     <tr>
-                        <th class="col-sm-1">Servicio N°</th>
-                        <th class="col col-sm-auto">Nombre y apellido</th>
-                        <th class="col col-sm-auto">DNI</th>
-                        <th class="col col-sm-1">Patente</th>
-                        <th class="col">Modelo</th>
-                        <th class="col">Importe</th>
-                        <th class="col">Fecha</th>
-                        <th class="col-auto">Estado</th>
+                        <th class="col-sm-1 sortable">Servicio N°</th>
+                        <th class="col col-sm-auto sortable">Nombre y apellido</th>
+                        <th class="col col-sm-auto sortable">DNI</th>
+                        <th class="col col-sm-1 sortable">Patente</th>
+                        <th class="col sortable">Modelo</th>
+                        <th class="col sortable">Importe</th>
+                        <th class="col sortable">Fecha</th>
+                        <th class="col-auto sortable">Fecha último cambio</th>
+                        <th class="col-auto sortable">Estado</th>
                     </tr>
                 </thead>
                 <tbody id="listServices" role="button">
@@ -118,8 +124,8 @@ TODO:
                                 <span>Modificar estado del trabajo</span>
                                 <div style="border: 1px solid black; padding: 1vh; border-radius: 3px;">
                                     Estado actual: <strong id="spanCurrentState">Entregado</strong>
-                                    <button class="btn btn-success">Cambiar a estado: <span style="color: blue;"
-                                            id="showNextState">Terminado</span></button>
+                                    <button class="btn btn-success" onclick="changeServiceState(this)">Cambiar a estado:
+                                        <span style="color: blue;" id="showNextState">Terminado</span></button>
                                 </div>
                             </div>
                         </div>
@@ -127,7 +133,7 @@ TODO:
                 </div>
             </div>
             <script>
-                $(function () {
+                $(function () { // obtiene valores GET en caso de que provenga de menú de clientes
                     const urlParams = new URLSearchParams(window.location.search);
                     const serviceId = urlParams.get('id');
                     const isService = urlParams.get('isservice');
@@ -136,11 +142,11 @@ TODO:
                     }
                 });
                 loadAllServices();
-                $(".modal").on("hidden.bs.modal", function () {
+                $(".modal").on("hidden.bs.modal", function () { // limpiar campos, y cargar lista de servicios al ocultar el modal
                     $(this).find("input, textarea").val("");
                     loadAllServices();
                 });
-                $('#SelectFilterTable').change(function (e) {
+                $('#SelectFilterTable').change(function (e) {// notifica a usuario si no tiene filtro seleccionado
                     if ($('#SelectFilterTable').val() == '') {
                         loadAllProducts();
                         $("#InputFilterTable").attr({
@@ -155,7 +161,7 @@ TODO:
                         });
                     }
                 });
-                $("#InputFilterTable").on('input', function () {
+                $("#InputFilterTable").on('input', function () {// filtrado generico de tabla según input text, y selección de columna a fitrar
                     var filter = $(this).val().toUpperCase();
                     var selected = $("#SelectFilterTable").val(); // valor del <select>
                     var tableHead = $("#tableServices");
@@ -192,7 +198,7 @@ TODO:
                         $(this).toggle(found);
                     });
                 });
-                function loadAllServices() {
+                function loadAllServices() {//Cargar todos los servicios disponibles
                     $.ajax({
                         type: "POST",
                         url: "backend/collector.php",
@@ -257,6 +263,11 @@ TODO:
                                 );
                                 tr.append(
                                     $("<td>")
+                                        .text(content.fecha_estado)
+                                        .attr("onclick", "loadServiceData(" + content.id + ")")
+                                );
+                                tr.append(
+                                    $("<td>")
                                         .text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : "entregado")
                                         .attr("onclick", "loadServiceData(" + content.id + ")")
                                 );
@@ -269,7 +280,7 @@ TODO:
                     });
                 }
 
-                function loadServiceData(tableId) {
+                function loadServiceData(tableId) { // Cargar detalles del servicio (panel añadir trabajos, modificar estado, cantidad, etc)
                     showModal("showServiceModal");
                     $.ajax({
                         type: "POST",
@@ -283,7 +294,7 @@ TODO:
                                 buttonMinus = $("<button>").attr({
                                     id: "substract_" + content.s_id,
                                     class: "btn btn-sm btn-danger",
-                                    onclick: "modalServicesSubstract(this, " + content.t_id + "," + content.sd_id + ")",
+                                    onclick: "modalServicesSubstract(this, " + content.t_id + "," + content.sd_id + "," + content.sd_cantidad + ")",
                                 });
                                 buttonMinus.html('<i class="bi bi-dash-lg"></i>');
                                 tr = $("<tr>");
@@ -304,11 +315,11 @@ TODO:
                                         content.m_nombre ?
                                             $("<h6>").html(`<strong>Modelo:</strong> ${content.m_nombre}`) :
                                             null,
-                                        $("<h6>").html(`<strong>Trabajos:</strong> ${response.data[0].t_id == null?0:count = count + 1}`)
+                                        $("<h6>").html(`<strong>Trabajos:</strong> ${response.data[0].t_id == null ? 0 : count = count + 1}`)
                                     )
                                 );
                                 if (response.data[0].t_id == null) { // NO presenta trabajos asignados?
-                                    console.log('true: ' + response.data[0].t_id);
+                                    // console.log('true: ' + response.data[0].t_id);
                                     tr.append($("<td>").text('--'));
                                     tr.append($("<td>").text('--'));
                                     tr.append($("<td>").text('--'));
@@ -316,7 +327,7 @@ TODO:
                                     tr.append($("<td>").text('--'));
                                     $("#listServiceDetails").append(tr);
                                 } else {
-                                    console.log('false: ' + response.data[0].t_id);
+                                    // console.log('false: ' + response.data[0].t_id);
                                     tr.append($("<td>").text(index + 1));
                                     tr.append($("<td>").text(content.t_nombre));
                                     tr.append($("<td>").text(content.sd_importe));
@@ -326,6 +337,7 @@ TODO:
                                 }
                             });
                             $('#spanCurrentState').text(response.data[0].s_estado == 0 ? "recibido" : response.data[0].s_estado == 1 ? "en proceso" : response.data[0].s_estado == 2 ? "terminado no entregado" : "entregado");
+                            $('#showNextState').text(response.data[0].s_estado < 3 ? (response.data[0].s_estado == 0 ? 'en proceso' : response.data[0].s_estado == 1 ? 'terminado no entregado' : 'entregado') : 'N/A');
                             $('#selectTrabajosList').empty();
                             $('#selectTrabajosList').append($('<option>').attr({ disabled: true, selected: true }).text('Seleccione tipo de trabajo - Importe'));
                             response.jobsList.forEach(element => {//Lista de trabajos a disposicion. ORDEN: por importe en orden ascendente (menor precio = mayor demanda)
@@ -338,8 +350,38 @@ TODO:
                         },
                     });
                 }
-                function addNewJobOnServiceSelected(serviceId) {
-                    if (!$('#selectTrabajosList').val()) { console.warn('Seleccione primero tipo de trabajo'); return; } else {
+                function addNewJobOnServiceSelected(serviceId) { // añadir nuevo trabajo a servicio en ventana modal
+                    if (!$('#selectTrabajosList').val()) { // si no presenta trabajo seleccionado en select box
+                        let toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
+                        }).fire({
+                            icon: 'info',
+                            title: 'Primero debe seleccionar un tipo de trabajo.'
+                        }); return;
+                    } else if ($('#spanCurrentState').text() == 'entregado') { // está entregado el vehículo?
+                        let toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
+                        }).fire({
+                            icon: 'info',
+                            title: 'El servicio ya se encuentra en estado entregado, no se pueden añadir más trabajos.'
+                        }); return;
+                    } else { // añadir trabajo a servicio
                         $.ajax({
                             type: "POST",
                             url: "backend/collector.php",
@@ -372,16 +414,158 @@ TODO:
                     $('#btnCountNewJobToService').children('span').html(count);
                     $('#btnCountNewJobToService').data('count', count);
                 }
-                function showModal(modalId) {
+                function showModal(modalId) { // mostrar modal tomando ID
                     const modalInstance = bootstrap.Modal.getOrCreateInstance(
                         $("#" + modalId)[0]
                     );
                     modalInstance.show();
                 }
-                function modalServicesSubstract(element, t_id, sd_id) {
-                    console.log('Elimina trabajo id:' + t_id + ' de servicio:' + $('#contextId').attr('serviceId') + ' Y detalle de servicio: ' + sd_id);
-                }
+                function modalServicesSubstract(element, t_id, sd_id, sd_cantidad) {
+                    // console.log('Elimina trabajo id:' + t_id + ' de servicio:' + $('#contextId').attr('serviceId') + ' Y detalle de servicio: ' + sd_id);
+                    let toast;
+                    if ($('#spanCurrentState').text() == 'en proceso' || $('#spanCurrentState').text() == 'recibido' || $('#spanCurrentState').text() == 'entregado') {// solo puede restar trabajos si está marcado como terminado almenos el listado de trabajos actual (terminado no entregado)
+                        toast = Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000,
+                            timerProgressBar: true,
+                            didOpen: (toast) => {
+                                toast.addEventListener('mouseenter', Swal.stopTimer)
+                                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                            }
+                        }).fire({
+                            icon: 'info',
+                            title: 'El servicio se encuentra fuera del estado "terminado no entregado", primero confirme la finalización de sus trabajos insertados para proceder.'
+                        });
+                        return;
+                    } else {
+                        $.ajax({
+                            type: "POST",
+                            url: "backend/collector.php",
+                            data: { action: "servicios_substraerTrabajo", serviceId: $('#contextId').attr('serviceId'), jobId: t_id, serviceDetailId: sd_id, jobCount: sd_cantidad },
+                            dataType: "json",
+                            success: function (response) {
+                                let toast = Swal.mixin({
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 3000,
+                                    timerProgressBar: true,
+                                    didOpen: (toast) => {
+                                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                                    }
+                                }).fire({
+                                    icon: 'info',
+                                    title: 'Cantidad del trabajo seleccionado reducida.'
+                                });
+                                loadServiceData($('#contextId').attr('serviceId'));
+                            },
+                            error: function (xhr, status) {
+                                console.warn("Respuesta:", { status: status, text: xhr.responseJSON['message'] });
+                            }
+                        });
+                    }
 
+                }
+                function changeServiceState(element) {// Listado de estados: 0=recibido 1=en proceso 2=terminado no entregado 3=entregado
+                    let currentState = $('#spanCurrentState').text();
+                    let nextState = '';
+                    let toast;
+                    let nextStateValue = -1;
+                    switch (currentState) {// determina siguiente estado según el actual
+                        case 'recibido':
+                            toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                                }
+                            }).fire({
+                                icon: 'info',
+                                title: 'Primero debe añadir su primer trabajo a realizar.'
+                            });
+                            return;
+                        case 'en proceso':
+                            nextState = 'terminado no entregado';
+                            nextStateValue = 2;
+                            break;
+                        case 'terminado no entregado':
+                            nextState = 'entregado';
+                            nextStateValue = 3;
+                            break;
+                        case 'entregado':
+                            toast = Swal.mixin({
+                                toast: true,
+                                position: 'top-end',
+                                showConfirmButton: false,
+                                timer: 3000,
+                                timerProgressBar: true,
+                                didOpen: (toast) => {
+                                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                                }
+                            }).fire({
+                                icon: 'info',
+                                title: 'El servicio ya se encuentra en estado entregado, no se puede modificar más.'
+                            });
+                            return;
+                        default:
+                            console.warn('Estado desconocido.');
+                            return;
+                    }
+                    $.ajax({
+                        type: "POST",
+                        url: "backend/collector.php",
+                        data: { action: "servicios_modificar", serviceId: $('#contextId').attr('serviceId'), newState: nextStateValue },
+                        dataType: "json",
+                        success: function (response) {
+                            loadServiceData($('#contextId').attr('serviceId'));
+                        },
+                        error: function (xhr, status) {
+                            console.warn("Respuesta:", { status: status, text: xhr.responseJSON['message'] });
+                        }
+                    });
+                }
+                $('#tableServices th.sortable').on('click', function () {
+                    var table = $(this).closest('table');
+                    var rows = table.find('tbody > tr').get(); // obtiene todas las filas de la tabla
+                    var index = $(this).index();
+                    var sortDirection = $(this).data('sortDirection') || 'asc';
+
+                    rows.sort(function (a, b) {//función de comparación automática, maneja texto y números
+                        var A = $(a).children('td').eq(index).text().toUpperCase();
+                        var B = $(b).children('td').eq(index).text().toUpperCase(); // obtiene el texto de las celdas
+
+                        if ($.isNumeric(A) && $.isNumeric(B)) { // si son números, convierte a float para comparación numérica
+                            A = parseFloat(A);
+                            B = parseFloat(B);
+                        }
+
+                        if (A < B) {
+                            return sortDirection === 'asc' ? -1 : 1;// invierte el orden según dirección
+                        }
+                        if (A > B) {
+                            return sortDirection === 'asc' ? 1 : -1;
+                        }
+                        return 0;
+                    });
+
+                    // re organiza filas en tabla
+                    $.each(rows, function (idx, row) {
+                        table.children('tbody').append(row);
+                    });
+
+                    $(this).data('sortDirection', sortDirection === 'asc' ? 'desc' : 'asc'); // invierte data dirección para próximo clic
+
+                    $('#tableServices th').removeClass('asc desc'); // remueve clases de otras columnas previamente seleccionadas
+                    $(this).addClass(sortDirection); 
+                });
             </script>
 </body>
 
