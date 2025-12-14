@@ -261,11 +261,20 @@
                                         .text(content.fecha)
                                         .attr("onclick", "loadServiceData(" + content.id + ")")
                                 );
-                                tr.append(
-                                    $("<td>")
-                                        .text(content.fecha_estado)
-                                        .attr("onclick", "loadServiceData(" + content.id + ")")
-                                );
+                                //CONDICIONAL, SI FECHA_ESTADO == HOY, MOSTRAR "HOY"
+                                if (content.fecha_estado === getDateToday()) {
+                                    tr.append(
+                                        $("<td>")
+                                            .html("<strong>Hoy</strong>")
+                                            .attr("onclick", "loadServiceData(" + content.id + ")")
+                                    );
+                                } else {
+                                    tr.append(
+                                        $("<td>")
+                                            .text(content.fecha_estado)
+                                            .attr("onclick", "loadServiceData(" + content.id + ")")
+                                    );
+                                }
                                 tr.append(
                                     $("<td>")
                                         .text(content.estado == 0 ? "recibido" : content.estado == 1 ? "en proceso" : content.estado == 2 ? "terminado no entregado" : "entregado")
@@ -299,6 +308,7 @@
                                 buttonMinus.html('<i class="bi bi-dash-lg"></i>');
                                 tr = $("<tr>");
                                 $(tr).attr('id', content.id);
+                                let fechaEstado = content.s_fecha_estado === getDateToday() ? "Hoy" : content.s_fecha_estado;
                                 $("#detailServicePanel").html(// Encabezado de ventana modal, presenta todos los datos padre del servicio, cliente, vehículo
                                     $("<div>").addClass("service-card").append(
                                         $('<hidden>').attr({ type: 'hidden', id: 'contextId', serviceId: content.s_id, vehicleId: content.v_id, clientId: content.c_id }),
@@ -310,7 +320,8 @@
                                         $("<div>").addClass("service-body").append(
                                             $("<h6>").html(`<strong>Fecha:</strong> ${content.s_fecha}`),
                                             $("<h6>").html(`<strong>Importe total:</strong> $${content.s_importe}`),
-                                            $("<h6>").html(`<strong>Estado:</strong> ${content.s_estado == 0 ? "recibido" : content.s_estado == 1 ? "en proceso" : content.s_estado == 2 ? "terminado no entregado" : "entregado"}`)
+                                            $("<h6>").html(`<strong>Estado:</strong> ${content.s_estado == 0 ? "recibido" : content.s_estado == 1 ? "en proceso" : content.s_estado == 2 ? "terminado no entregado" : "entregado"}`),
+                                            $("<h6>").html(`<strong>Último cambio:</strong> ${fechaEstado}`)
                                         ),
                                         content.m_nombre ?
                                             $("<h6>").html(`<strong>Modelo:</strong> ${content.m_nombre}`) :
@@ -564,8 +575,16 @@
                     $(this).data('sortDirection', sortDirection === 'asc' ? 'desc' : 'asc'); // invierte data dirección para próximo clic
 
                     $('#tableServices th').removeClass('asc desc'); // remueve clases de otras columnas previamente seleccionadas
-                    $(this).addClass(sortDirection); 
+                    $(this).addClass(sortDirection);
                 });
+                function getDateToday() { // función para comparar fechas, retorna fecha actual en formato YYYY-MM-DD
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                }
+                //
             </script>
 </body>
 

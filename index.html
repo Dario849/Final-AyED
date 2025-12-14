@@ -113,7 +113,7 @@
                             <h5 class="modal-title" id="productNameStock">Situación de Stock</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                        <div class="modal-body p-0 ">
+                        <div class="modal-body p-0">
                             <div class="table-responsive">
                                 <table id="tableListStock"
                                     class="table align-middle table-bordered table-striped table-hover table-sm">
@@ -131,6 +131,7 @@
                                     <tbody class="table-group-divider" id="listStock"></tbody>
                                 </table>
                             </div>
+                            <div id="showBtnAddNewServiceShortcut"></div>
                         </div>
                     </div>
                 </div>
@@ -139,6 +140,8 @@
                 loadAllClients();
                 $(".modal").on("hidden.bs.modal", function () {
                     $(this).find("input, textarea").val("");
+                    $(this).find("#selectOtherVehicle").empty();
+                    $(this).find("#vehicleContentAddService").text('---').attr('data-v_id', '');
                     loadAllClients();
                 });
                 $('#SelectFilterTable').change(function (e) {
@@ -272,6 +275,15 @@
                         success: function (response) {
                             $("#listStock").empty();
                             $("#productNameStock").empty();
+                            $("#showBtnAddNewServiceShortcut").empty();
+                            var th, tr, buttonPlus, buttonRewind;
+                            buttonPlus = $("<button>").attr({
+                                id: "add_" + response.data[0].c_id,
+                                class: "btn btn-sm btn-success me-1",
+                                onclick: "modalAddService(this, " + response.data[0].c_id + "," + response.data[0].v_id + ")",
+                            });
+                            buttonPlus.html('<i class="bi bi-plus-lg">Añadir Nuevo Servicio</i>');
+                            $("#showBtnAddNewServiceShortcut").append(buttonPlus);
                             if (response.data.every(item => item.s_id == null)) {// Si todos los vehículos del cliente no tienen servicios asociados
                                 $("#productNameStock").append(
                                     $("<h6>").text("Cliente: " + response.data[0].apellido_nombre + " (Todos sus vehículos no tienen servicios asociados)"),
@@ -304,7 +316,7 @@
                                 $("#productNameStock").html($("<label>").text("Cliente: " + response.data[0].apellido_nombre));
                                 th = $("<tr>");
                                 th.append($("<th>").text('Servicio N°'));
-                                th.append($("<th>").text('Fecha'));
+                                th.append($("<th>").text('Fecha')).addClass('text-center text-nowrap');
                                 th.append($("<th>").text('Patente'));
                                 th.append($("<th>").text('Modelo'));
                                 th.append($("<th>").text('Monto Total'));
