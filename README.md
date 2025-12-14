@@ -20,6 +20,7 @@
  - Variables, y atributos id se presentan en ingles para mayor co-relación con funciones jQuery para facilitar flujo de proceso y entendimiento.  
  - Campos value permanecen en español para mejor relación con tablas y campos de la base de datos.  
 ## Contenidos en carpetas:  
+
 1. index.html: Vista única con ventanas modales donde se grafíca el sistema de forma completamente dinámica.  
 2. /js/
     - jQuery-3.7.1.js
@@ -32,3 +33,5 @@
     - ./handlers/
         - Contiene todos los handlers necesarios para cada módulo del sistema.
         
+## DER:
+- ![DER SERVICE OFICIAL](https://github.com/user-attachments/assets/0bf58f9a-82f2-4814-bc65-b7004a9c459a)
